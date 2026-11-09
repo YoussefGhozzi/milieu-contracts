@@ -1,0 +1,11 @@
+{
+  "name": "@milieu/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Contrat partagé MILIEU : schémas Zod, types et données simulées de démo",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "zod": "^3.25.0" },
+  "devDependencies": { "typescript": "~5.9.0" }
+}
