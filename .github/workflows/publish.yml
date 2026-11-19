@@ -1,0 +1,36 @@
+# Publie le paquet sur GitHub Packages quand on pousse un tag vX.Y.Z (même numéro que package.json).
+#   npm version minor   →  commit + tag v0.3.0   →  git push --follow-tags
+name: Publication
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: '@youssefghozzi'
+      - run: npm ci --no-audit --no-fund
+      - name: Le tag correspond à la version du paquet
+        run: |
+          version=$(node -p "require('./package.json').version")
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME ≠ version $version"; exit 1; }
+      - run: npm run typecheck && npm run build
+      # Dans le dépôt, le paquet s'appelle @milieu/contracts et pointe sur les sources (utile en dev local).
+      # GitHub Packages exige le nom du propriétaire : on publie la version compilée sous @youssefghozzi/milieu-contracts.
+      - name: Préparer le paquet publié
+        run: |
+          npm pkg delete private
+          npm pkg set name=@youssefghozzi/milieu-contracts main=dist/index.js types=dist/index.d.ts
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
