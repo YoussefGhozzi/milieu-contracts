@@ -72,11 +72,13 @@ export function newIdempotencyKey() {
 export class ApiClient {
   readonly baseUrl: string;
   private refreshing: Promise<boolean> | null = null;
-  private readonly fetchImpl: typeof fetch;
+  /** Appel réseau (signature minimale : compatible avec le fetch de Node, des navigateurs et de React Native). */
+  private readonly fetchImpl: (url: string, init: RequestInit) => Promise<Response>;
 
   constructor(readonly options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, '');
-    this.fetchImpl = options.fetch ?? ((...a: Parameters<typeof fetch>) => fetch(...a));
+    const custom = options.fetch;
+    this.fetchImpl = custom ? (url, init) => custom(url, init) : (url, init) => fetch(url, init);
   }
 
   url(path: string, query?: CallOptions<unknown>['query']) {
