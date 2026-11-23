@@ -106,7 +106,7 @@ export function createMilieuApi(http: ApiClient) {
       adjust: (input: { clientId: string; amount: number; reason: string }, key?: string) => http.post<unknown>('/wallet/adjustments', input, { idempotent: key ?? true }),
     },
     promotions: {
-      list: (q: { gymId?: string; state?: 'active' | 'scheduled' | 'expired' | 'disabled' } = {}) => http.get('/promotions', { query: q, schema: items(ApiPromotionSchema) }),
+      list: (q: { gymId?: string; state?: 'active' | 'scheduled' | 'expired' | 'disabled' } = {}) => http.get('/promotions', { query: q, schema: z.array(ApiPromotionSchema) }),
       create: (input: { gymId: string; title: string; description?: string; kind: 'percent_off' | 'bonus_tokens'; value: number; minTokens?: number; startsOn: string; endsOn: string }) =>
         http.post('/promotions', input, { schema: ApiPromotionSchema }),
       update: (id: string, patch: { title?: string; description?: string; active?: boolean; startsOn?: string; endsOn?: string }) =>
