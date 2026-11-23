@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { KpiReportSchema, type KpiQuery, type ReportExportKind } from '../reports';
 import type { ApiClient } from './http';
 import {
   ApiAccountSchema, ApiCheckInSchema, ApiCoachProfileSchema, ApiCoachSchema, ApiCourseSchema, ApiGymSchema, ApiLedgerPageSchema, ApiMeSchema,
@@ -119,6 +120,15 @@ export function createMilieuApi(http: ApiClient) {
       reviews: (id: string, q: { page?: number; limit?: number } = {}) => http.get(`/coaches/${enc(id)}/ratings`, { query: q, schema: items(ApiReviewSchema) }),
       hideReview: (ratingId: string, reason?: string) => http.post<unknown>(`/ratings/${enc(ratingId)}/hide`, reason ? { reason } : {}),
       unhideReview: (ratingId: string) => http.post<unknown>(`/ratings/${enc(ratingId)}/unhide`),
+    },
+    reports: {
+      /** Tableau de bord : indicateurs de la période (accueil : sa salle ; admin : une salle ou tout le réseau). */
+      kpi: (q: KpiQuery = {}) => http.get('/reports/kpi', { query: { ...q }, schema: KpiReportSchema }),
+      /**
+       * Export CSV (séparateur « ; », virgule décimale). Le texte reçu n'a plus de BOM (retiré au décodage) :
+       * le remettre (`'﻿' + csv`) en enregistrant le fichier, pour qu'Excel lise bien les accents.
+       */
+      exportCsv: (q: KpiQuery & { kind: ReportExportKind }) => http.get<string>('/reports/export.csv', { query: { ...q }, responseType: 'text' }),
     },
   };
 }

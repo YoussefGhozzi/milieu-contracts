@@ -57,6 +57,8 @@ export interface CallOptions<T> {
   signal?: AbortSignal;
   /** Corps déjà préparé (envoi de photo). */
   form?: FormData;
+  /** `text` : réponse lue telle quelle (export CSV), sans JSON ni schéma. */
+  responseType?: 'json' | 'text';
 }
 
 const SESSION_CODES_REVOKED = new Set(['AUTH_SESSION_REVOKED', 'AUTH_INVALID_TOKEN', 'AUTH_REFRESH_REUSED']);
@@ -106,7 +108,7 @@ export class ApiClient {
         if (e instanceof ApiProblem && e.offline && retriable && attempt === 0 && !opts.signal?.aborted) { await sleep(800); continue; }
         throw e;
       }
-      if (res.ok) return this.parse<T>(res, path, opts.schema);
+      if (res.ok) return opts.responseType === 'text' ? (await res.text()) as T : this.parse<T>(res, path, opts.schema);
       const problem = await toProblem(res);
       if (res.status === 401 && !opts.anonymous) {
         if (problem.code === 'AUTH_EXPIRED' && !refreshed) {
@@ -160,7 +162,7 @@ export class ApiClient {
   }
 
   private async send(method: string, path: string, opts: CallOptions<unknown>, key?: string): Promise<Response> {
-    const headers: Record<string, string> = { Accept: 'application/json' };
+    const headers: Record<string, string> = { Accept: opts.responseType === 'text' ? 'text/csv, text/plain, */*' : 'application/json' };
     if (opts.body !== undefined && !opts.form) headers['Content-Type'] = 'application/json';
     if (key) headers['Idempotency-Key'] = key;
     if (this.options.refreshMode === 'cookie') headers['X-Refresh-Mode'] = 'cookie';
